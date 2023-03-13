@@ -1,0 +1,543 @@
+import java.awt.*;
+import java.sql.Array;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
+import java.util.random.*;
+
+/**
+ * Sand lab adapted from http://nifty.stanford.edu/2017/feinberg-falling-sand/
+ * <p>
+ * Student name: YOUR NAME GOES HERE
+ * <p>
+ * TODO: Document expected behavior of various materials here
+ */
+public class SandLab {
+
+    /**
+     * Enum for material types of the particles
+     */
+    public enum Material {
+        EMPTY,
+        METAL,
+        SAND,
+        WATER,
+        OIL,
+        ACID,
+        PLANTS
+
+        //TODO: add constants for additional particle types here
+
+    }
+
+    /**
+     * grid of particles of various materials
+     */
+    private Material[][] grid;
+
+    /**
+     * The display window
+     */
+    private SandDisplay display;
+
+    /**
+     * Create a new SandLab of given size.
+     *
+     * @param numRows number of rows
+     * @param numCols number of columns
+     */
+    public SandLab(int numRows, int numCols) {
+        //Include names for all Materials used in simulation
+        String[] names = new String[]{"Empty", "Metal", "Sand", "Water","OIL"
+                ,"ACID","PLANTS"};
+        display = new SandDisplay("Falling Sand", numRows, numCols, names);
+
+        //initialize grid with empty cells
+        grid = new Material[numRows][numCols];
+        for (int r = 0; r < numRows; r++) {
+            for (int c = 0; c < numCols; c++) {
+                grid[r][c] = Material.EMPTY;
+            }
+        }
+    }
+
+    /**
+     * called when the user clicks on a location using the given tool
+     *
+     * @param row  Row of location
+     * @param col  Column of location
+     * @param tool Name of selected tool
+     */
+    public void locationClicked(int row, int col, String tool) {
+        //update grid location with selected material
+        switch (tool) {
+            case "METAL" -> grid[row][col] = Material.METAL;
+            case "SAND" -> grid[row][col] = Material.SAND;
+            case "WATER" -> grid[row][col] = Material.WATER;
+            case "OIL"   -> grid[row][col] = Material.OIL;
+            case "ACID"   -> grid[row][col] = Material.ACID;
+            case "PLANTS"   -> grid[row][col] = Material.PLANTS;
+            default -> grid[row][col] = Material.EMPTY;
+        }
+    }
+
+    /**
+     * copies each element of grid into the display
+     */
+    public void updateDisplay() {
+        // update display with colors based on grid contents
+        for (int r = 0; r < grid.length; r++) {
+            for (int c = 0; c < grid[0].length; c++) {
+                //gray color for metal
+                if (grid[r][c] == Material.METAL) {
+                    display.setColor(r, c, Color.gray);
+                    //yellow color for sand
+                } else if (grid[r][c] == Material.SAND) {
+                    display.setColor(r, c, Color.yellow);
+                    //blue color for water
+                } else if (grid[r][c] == Material.WATER) {
+                    display.setColor(r, c, Color.blue);
+                    //orange color for oil
+                }else if (grid[r][c] == Material.OIL){
+                    display.setColor(r,c, Color.ORANGE);
+                    //pink color for acid
+                } else if (grid[r][c] == Material.ACID){
+                    display.setColor(r,c, Color.PINK);
+                    //green color for plants
+                }else if (grid[r][c] == Material.PLANTS){
+                    display.setColor(r,c, Color.GREEN);
+                    //black color for empty space
+                } else {
+                    display.setColor(r, c, Color.black);
+                }
+            }
+        }
+    }
+
+    /**
+     * Update the simulation by one step.
+     * Called repeatedly.
+     * Causes one random particle to maybe do something
+     */
+    public void step() {
+        //random location and update the particle if relevant
+        //finding a random point on our array
+
+        //random number for row
+        int row = (int) (Math.random() * (grid.length - 1));
+        //random number for column
+        int col = (int) (Math.random() * grid[0].length);
+
+        //directions for column for water
+        int[] intArraycol = new int[]{-1, 0, 1};
+        ////directions for row for water
+        int[] intArrayrow = new int[]{0, 1};
+
+        //random selection of a number from {0,1}
+        int randomNumberRow = (int) ((Math.random() * 3) - 1);
+        int randomNumberCol1 = col;
+        //random selection of a number from {-1,0,1}
+        if (randomNumberRow == row){
+            if (col == 0){
+                randomNumberCol1 = col + (int)((Math.random()*3) -1);
+            }else if (col == (grid[0].length) - 1){
+                randomNumberCol1 = col + (int)((Math.random()*3) - 2);
+            }else{
+                randomNumberCol1 = col + (int)((Math.random()*4) - 2);
+            }
+
+        }
+
+        int randomNumberCol = (int) (Math.random() * (intArraycol.length + 1));
+        int randomPlantHeight =
+                (int) (Math.random() * row / 100);
+
+
+        //for every space of the grid that is sand, if it's empty, sand will
+        // fill that. if it's water, sand will drop into water and even if
+        // it's oil, sand will drop into that.
+        if (grid[row][col] == Material.SAND) {
+            if (randomNumberRow == 1 && randomNumberCol == 0 &&
+                    (col + 1) < grid[0].length && (col > 1)) {
+                if (grid[row + 1][col] == Material.EMPTY) {
+                    grid[row + 1][col] =
+                            Material.SAND;
+                    grid[row][col] = Material.EMPTY;
+                } else if (grid[row + 1][col + randomNumberCol] == Material.WATER) {
+                    grid[row + 1][col + randomNumberCol] =
+                            Material.SAND;
+                    grid[row][col] = Material.WATER;
+                } else if (grid[row + 1][col + randomNumberCol] == Material.OIL) {
+                    grid[row + 1][col + randomNumberCol] =
+                            Material.SAND;
+                    grid[row][col] = Material.OIL;
+                }
+            } else if (randomNumberRow == 1 && randomNumberCol == -1 &&
+                    (col + 1) < grid[0].length && (col > 1)) {
+                if (grid[row + 1][col] == Material.EMPTY) {
+                    grid[row + 1][col] =
+                            Material.SAND;
+                    grid[row][col] = Material.EMPTY;
+                    //if the below space or left or right of sand is water
+                } else if (grid[row + 1][col + randomNumberCol] ==
+                        Material.WATER) {
+                    //sand can drop into the water
+                    grid[row + 1][col + randomNumberCol] =
+                            Material.SAND;
+                    grid[row][col] = Material.WATER;
+                    //if the below space or left or right of sand is oil
+                } else if (grid[row + 1][col + randomNumberCol] ==
+                        Material.OIL) {
+                    //sand can drop into oil
+                    grid[row + 1][col + randomNumberCol] =
+                            Material.SAND;
+                    //oil will be above the sand
+                    grid[row][col] = Material.OIL;
+                }
+                //for specific random numbers and boundaries of the 2d array
+            } else if (randomNumberRow == 0 && randomNumberCol == -1 &&
+                    (col + 1) < grid[0].length && (col > 1)) {
+                //if the below space is empty, it will be filled by sand
+                if (grid[row + 1][col] == Material.EMPTY) {
+                    grid[row + 1][col] = Material.SAND;
+                    grid[row][col] = Material.EMPTY;
+                    //if the below and right space is water, sand will be
+                    // dropped into those spaces
+                } else if (grid[row + randomNumberRow][col - 1] ==
+                        Material.WATER) {
+                    grid[row + randomNumberRow][col - 1] = Material.SAND;
+                    grid[row][col] = Material.WATER;
+                    //if the below and right space is oil, sand will be
+                    // dropped into those spaces
+                } else if (grid[row + randomNumberRow][col - 1] ==
+                        Material.OIL) {
+                    grid[row + randomNumberRow][col - 1] =
+                            Material.SAND;
+                    grid[row][col] = Material.OIL;
+                }
+                //for specific random numbers and boundaries of the 2d array
+            } else if (randomNumberRow == 0 && randomNumberCol == 1 &&
+                    (col + 1) < grid[0].length && (col > 1)) {
+                //if the below space is empty, it will be filled by sand
+                if (grid[row + 1][col] == Material.EMPTY) {
+                    grid[row + 1][col] =
+                            Material.SAND;
+                    //and the former space will be empty
+                    grid[row][col] = Material.EMPTY;
+                    //if the same space or below, left or right of that space
+                    // is empty, it will be filled by water
+                } else if (grid[row + randomNumberRow][col + randomNumberCol]
+                        == Material.WATER) {
+                    grid[row + randomNumberRow][col + randomNumberCol] =
+                            Material.SAND;
+                    //the former space will be filled by water.
+                    grid[row][col] = Material.WATER;
+                } else if (grid[row + randomNumberRow][col + randomNumberCol]
+                        == Material.OIL) {
+                    grid[row + randomNumberRow][col + randomNumberCol] =
+                            Material.SAND;
+                    grid[row][col] = Material.OIL;
+                }
+            } else if (randomNumberRow == 0 && randomNumberCol == 0 &&
+                    (col + 1) < grid[0].length && (col > 1)) {
+                if (grid[row + 1][col - 1] == Material.EMPTY) {
+                    grid[row + 1][col - 1] = Material.SAND;
+                    grid[row][col] = Material.EMPTY;
+                } else if (grid[row + 1][col - 1] == Material.WATER) {
+                    grid[row + 1][col - 1] = Material.SAND;
+                    grid[row][col] = Material.WATER;
+                } else if (grid[row + 1][col - 1] == Material.OIL) {
+                    grid[row + 1][col - 1] = Material.SAND;
+                    grid[row][col] = Material.OIL;
+                }
+            } else if (randomNumberRow == 1 && randomNumberCol == 1 &&
+                    (col + 1) < grid[0].length && (col > 1)) {
+                if (grid[row + 1][col + 1] == Material.EMPTY) {
+                    grid[row + 1][col + 1] = Material.SAND;
+                    grid[row][col] = Material.EMPTY;
+                } else if (grid[row + 1][col + randomNumberCol]
+                        == Material.WATER) {
+                    grid[row + 1][col + randomNumberCol] = Material.SAND;
+                    grid[row][col] = Material.WATER;
+                } else if (grid[row + 1][col + randomNumberCol]
+                        == Material.OIL) {
+                    grid[row + 1][col + randomNumberCol] = Material.SAND;
+                    grid[row][col] = Material.OIL;
+                }
+            }
+
+            //if there is water in any space of grid
+        } else if (grid[row][col] == Material.WATER) {
+            //for specific random numbers and boundaries of the 2d array
+            if (randomNumberRow == 1 && randomNumberCol == 0 &&
+                    (col + 1) < grid[0].length && (col > 1)) {
+                //if the same of below space, left or right of the space is
+                // empty, it will be filled by water
+                if (grid[row + randomNumberRow][col + randomNumberCol]
+                        == Material.EMPTY) {
+                    grid[row + randomNumberRow][col + randomNumberCol]
+                            = Material.WATER;
+                    grid[row][col] = Material.EMPTY;
+                }
+            } else if (randomNumberRow == 1 && randomNumberCol == -1 &&
+                    (col + 1) < grid[0].length && (col > 1)) {
+                if (grid[row + randomNumberRow][col + randomNumberCol]
+                        == Material.EMPTY) {
+                    grid[row + randomNumberRow][col + randomNumberCol]
+                            = Material.WATER;
+                    grid[row][col + randomNumberCol] = Material.WATER;
+                }
+            } else if (randomNumberRow == 0 && randomNumberCol == -1 &&
+                    (col + 1) < grid[0].length && (col > 1)) {
+                if (grid[row + randomNumberRow][col - 1] == Material.EMPTY) {
+                    grid[row + randomNumberRow][col - 1] = Material.WATER;
+                    grid[row][col] = Material.EMPTY;
+                }
+            } else if (randomNumberRow == 0 && randomNumberCol == 1 &&
+                    (col + 1) < grid[0].length && (col > 1)) {
+                if (grid[row + randomNumberRow][col + randomNumberCol]
+                        == Material.EMPTY) {
+                    grid[row + randomNumberRow][col + randomNumberCol]
+                            = Material.WATER;
+                    grid[row][col] = Material.EMPTY;
+                }
+            } else if (randomNumberRow == 0 && randomNumberCol == 0 &&
+                    (col + 1) < grid[0].length && (col > 1)) {
+                if (grid[row + 1][col - 1] == Material.EMPTY) {
+                    grid[row + 1][col - 1] = Material.WATER;
+                    grid[row][col] = Material.EMPTY;
+                }
+            } else if (randomNumberRow == 1 && randomNumberCol == 1 &&
+                    (col + 1) < grid[0].length && (col > 1)) {
+                if (grid[row + 1][col + randomNumberCol] == Material.EMPTY) {
+                    grid[row + 1][col + randomNumberCol] = Material.WATER;
+                    grid[row][col] = Material.EMPTY;
+                }
+            }
+
+            //for every space of the grid is filled by oil, if it;s empty, it
+            // will be filled by oil
+        } else if (grid[row][col] == Material.OIL) {
+            if (randomNumberRow == 1 && randomNumberCol == 0 &&
+                    (col + 1) < grid[0].length && (col > 1)) {
+                if (grid[row + 1][col] == Material.EMPTY) {
+                    grid[row + 1][col] =
+                            Material.OIL;
+                    grid[row][col] = Material.EMPTY;
+                }
+            } else if (randomNumberRow == 1 && randomNumberCol == -1 &&
+                    (col + 1) < grid[0].length && (col > 1)) {
+                if (grid[row + 1][col + randomNumberCol] == Material.EMPTY) {
+                    grid[row + 1][col + randomNumberCol] =
+                            Material.OIL;
+                    grid[row][col] = Material.EMPTY;
+                }
+            } else if (randomNumberRow == 0 && randomNumberCol == -1 &&
+                    (col + 1) < grid[0].length && (col > 1)) {
+                if (grid[row + randomNumberRow][col - 1] == Material.EMPTY) {
+                    grid[row + randomNumberRow][col - 1] = Material.OIL;
+                    grid[row][col] = Material.EMPTY;
+                }
+            } else if (randomNumberRow == 0 && randomNumberCol == 1 &&
+                    (col + 1) < grid[0].length && (col > 1)) {
+                if (grid[row + randomNumberRow][col + randomNumberCol]
+                        == Material.EMPTY) {
+                    grid[row + randomNumberRow][col + randomNumberCol] =
+                            Material.OIL;
+                    grid[row][col] = Material.EMPTY;
+                }
+            } else if (randomNumberRow == 0 && randomNumberCol == 0 &&
+                    (col + 1) < grid[0].length && (col > 1)) {
+                if (grid[row + 1][col - 1] == Material.EMPTY) {
+                    grid[row + 1][col - 1] = Material.OIL;
+                    grid[row][col] = Material.EMPTY;
+                }
+            } else if (randomNumberRow == 1 && randomNumberCol == 1 &&
+                    (col + 1) < grid[0].length && (col > 1)) {
+                if (grid[row + 1][col + randomNumberCol] == Material.EMPTY) {
+                    grid[row + 1][col + randomNumberCol] = Material.OIL;
+                    grid[row][col] = Material.EMPTY;
+                }
+            }
+
+            //for every space of the grid is filled by acid, if it's empty, it
+            // will be filled by acid and acid destroys metal, is dropped into
+            // water and oil.
+        } else if (grid[row][col] == Material.ACID) {
+            //
+            if (randomNumberRow == 1 && randomNumberCol == 0 &&
+                    (col + 1) < grid[0].length && (col > 1)) {
+                if (grid[row + 1][col + randomNumberCol] == Material.EMPTY) {
+                    grid[row + 1][col + randomNumberCol] =
+                            Material.ACID;
+                    grid[row][col] = Material.EMPTY;
+                } else if (grid[row + 1][col] == Material.WATER) {
+                    grid[row + 1][col] =
+                            Material.ACID;
+                    grid[row][col] = Material.WATER;
+                } else if (grid[row + 1][col] == Material.OIL) {
+                    grid[row + 1][col] =
+                            Material.ACID;
+                    grid[row][col] = Material.OIL;
+                } else if (grid[row + 1][col] == Material.METAL) {
+                    grid[row + 1][col] =
+                            Material.ACID;
+                    grid[row][col] = Material.EMPTY;
+                }
+            } else if (randomNumberRow == 1 && randomNumberCol == -1 &&
+                    (col + 1) < grid[0].length && (col > 1)) {
+                if (grid[row + randomNumberRow][col + randomNumberCol]
+                        == Material.EMPTY) {
+                    grid[row + randomNumberRow][col + randomNumberCol] =
+                            Material.ACID;
+                    grid[row][col] = Material.EMPTY;
+                } else if (grid[row + 1][col + randomNumberCol] ==
+                        Material.WATER) {
+                    grid[row + 1][col + randomNumberCol] =
+                            Material.ACID;
+                    grid[row][col] = Material.WATER;
+                } else if (grid[row + 1][col + randomNumberCol] ==
+                        Material.OIL) {
+                    grid[row + 1][col + randomNumberCol] =
+                            Material.ACID;
+                    grid[row][col] = Material.OIL;
+                } else if (grid[row + 1][col + randomNumberCol] ==
+                        Material.METAL) {
+                    grid[row + 1][col + randomNumberCol] =
+                            Material.ACID;
+                    grid[row][col] = Material.EMPTY;
+                }
+            } else if (randomNumberRow == 0 && randomNumberCol == -1 &&
+                    (col + 1) < grid[0].length && (col > 1)) {
+                if (grid[row + randomNumberRow][col - 1] == Material.EMPTY) {
+                    grid[row + randomNumberRow][col - 1] = Material.ACID;
+                    grid[row][col] = Material.EMPTY;
+                } else if (grid[row + randomNumberRow][col - 1] ==
+                        Material.WATER) {
+                    grid[row + randomNumberRow][col - 1] = Material.ACID;
+                    grid[row][col] = Material.WATER;
+                } else if (grid[row + randomNumberRow][col - 1] ==
+                        Material.OIL) {
+                    grid[row + randomNumberRow][col - 1] =
+                            Material.ACID;
+                    grid[row][col] = Material.OIL;
+                } else if (grid[row + randomNumberRow][col - 1] ==
+                        Material.METAL) {
+                    grid[row + randomNumberRow][col - 1] =
+                            Material.ACID;
+                    grid[row][col] = Material.EMPTY;
+                }
+            } else if (randomNumberRow == 0 && randomNumberCol == 1 &&
+                    (col + 1) < grid[0].length && (col > 1)) {
+                if (grid[row + randomNumberRow][col + randomNumberCol]
+                        == Material.EMPTY) {
+                    grid[row + randomNumberRow][col + randomNumberCol] =
+                            Material.ACID;
+                    grid[row][col] = Material.EMPTY;
+                } else if (grid[row + randomNumberRow][col + randomNumberCol]
+                        == Material.WATER) {
+                    grid[row + randomNumberRow][col + randomNumberCol] =
+                            Material.ACID;
+                    grid[row][col] = Material.WATER;
+                } else if (grid[row + randomNumberRow][col + randomNumberCol]
+                        == Material.OIL) {
+                    grid[row + randomNumberRow][col + randomNumberCol] =
+                            Material.ACID;
+                    grid[row][col] = Material.OIL;
+                } else if (grid[row + randomNumberRow][col + randomNumberCol]
+                        == Material.METAL) {
+                    grid[row + randomNumberRow][col + randomNumberCol] =
+                            Material.ACID;
+                    grid[row][col] = Material.EMPTY;
+                }
+            } else if (randomNumberRow == 0 && randomNumberCol == 0 &&
+                    (col + 1) < grid[0].length && (col > 1)) {
+                if (grid[row + 1][col - 1] == Material.EMPTY) {
+                    grid[row + 1][col - 1] = Material.ACID;
+                    grid[row][col] = Material.EMPTY;
+                } else if (grid[row + 1][col - 1] == Material.WATER) {
+                    grid[row + 1][col - 1] = Material.ACID;
+                    grid[row][col] = Material.WATER;
+                } else if (grid[row + 1][col - 1] == Material.OIL) {
+                    grid[row + 1][col - 1] = Material.ACID;
+                    grid[row][col] = Material.OIL;
+                } else if (grid[row + 1][col - 1] == Material.METAL) {
+                    grid[row + 1][col - 1] = Material.ACID;
+                    grid[row][col] = Material.EMPTY;
+                }
+            } else if (randomNumberRow == 1 && randomNumberCol == 1 &&
+                    (col + 1) < grid[0].length && (col > 1)) {
+                if (grid[row + 1][col + randomNumberCol] == Material.EMPTY) {
+                    grid[row + 1][col + randomNumberCol] = Material.ACID;
+                    grid[row][col] = Material.EMPTY;
+                } else if (grid[row + 1][col + randomNumberCol]
+                        == Material.WATER) {
+                    grid[row + 1][col + randomNumberCol] = Material.ACID;
+                    grid[row][col] = Material.WATER;
+                } else if (grid[row + 1][col + randomNumberCol]
+                        == Material.OIL) {
+                    grid[row + 1][col + randomNumberCol] = Material.ACID;
+                    grid[row][col] = Material.OIL;
+                } else if (grid[row + 1][col + randomNumberCol]
+                        == Material.METAL) {
+                    grid[row + 1][col + randomNumberCol] = Material.ACID;
+                    grid[row][col] = Material.EMPTY;
+                }
+            }
+        }
+
+        //PLANTS GROW FROM THE GROUND
+
+        //if any space has plant
+        if (grid[row][col] == Material.PLANTS) {
+            //defining boundaries of length columns and rows
+            if ((col + 1) < grid[0].length && (col > 1) &&
+                    (row + 1) < grid.length && (row > 1)) {
+                //if the space above every row is empty
+                if (grid[row - randomPlantHeight][col] == Material.EMPTY) {
+                    //that plant will be grown up to that space
+                    grid[row  - randomPlantHeight][col] =
+                            Material.PLANTS;
+
+                }
+            }
+        }
+    }
+
+
+
+    /**
+     * Run the SandLab particle simulation.
+     * <p>
+     * DO NOT MODIFY THIS METHOD!
+     */
+    public void run() {
+        // keep updating as long as the program is running
+        while (true) {
+            // update some number of particles, as determined by the speed slider
+            for (int i = 0; i < display.getSpeed(); i++) {
+                step();
+            }
+            // Update the display object's colors
+            updateDisplay();
+            // wait for redrawing and for mouse events
+            display.repaintAndPause(1);
+
+            int[] mouseLoc = display.getMouseLocation();
+            //test if mouse clicked
+            if (mouseLoc != null) {
+                locationClicked(mouseLoc[0], mouseLoc[1],
+                        display.getTool().toUpperCase());
+            }
+        }
+    }
+
+    /**
+     * Creates a new SandLab and sets it running
+     */
+    public static void main(String[] args) {
+        SandLab lab = new SandLab(120, 80);
+        lab.run();
+    }
+}
